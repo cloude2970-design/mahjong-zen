@@ -34,6 +34,17 @@
       letter-spacing: 10px;
       color: #fafaf9;
     }
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      font-size: 11px;
+      letter-spacing: 4px;
+      margin-top: 8px;
+    }
+    .stats-bar span {
+      color: #d97706;
+    }
     #game-area {
       position: relative;
       flex-grow: 1;
@@ -90,13 +101,13 @@
     @keyframes pulse {
       50% { opacity: 0.5; }
     }
-    #onboarding-overlay {
+    #onboarding-overlay, #leaderboard-overlay, #name-input-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.95);
       z-index: 2000;
       display: none;
       flex-direction: column;
@@ -104,11 +115,13 @@
       align-items: center;
       text-align: center;
     }
-    .step-box {
-      max-width: 320px;
+    .step-box, .leaderboard-box, .name-input-box {
+      max-width: 360px;
       padding: 40px;
       border: 1px solid #444;
       background: #1c1917;
+      max-height: 80vh;
+      overflow-y: auto;
     }
     .step-text {
       font-size: 18px;
@@ -126,6 +139,7 @@
       display: flex;
       justify-content: center;
       gap: 15px;
+      flex-wrap: wrap;
     }
     .zen-btn {
       padding: 10px 25px;
@@ -145,24 +159,133 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    /* Leaderboard Styles */
+    .leaderboard-title {
+      font-size: 22px;
+      color: var(--gold);
+      letter-spacing: 6px;
+      margin-bottom: 20px;
+    }
+    .leaderboard-list {
+      text-align: left;
+      margin: 20px 0;
+    }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #333;
+      font-size: 14px;
+    }
+    .leaderboard-item .rank {
+      color: var(--gold);
+      width: 30px;
+    }
+    .leaderboard-item .name {
+      flex: 1;
+      color: #d6d3d1;
+      padding: 0 15px;
+    }
+    .leaderboard-item .time {
+      color: #a8a29e;
+      font-family: monospace;
+    }
+    .leaderboard-item .date {
+      font-size: 10px;
+      color: #666;
+      margin-left: 10px;
+    }
+    .no-scores {
+      color: #666;
+      font-style: italic;
+      padding: 20px;
+    }
+    .zen-input {
+      background: #0c0a09;
+      border: 1px solid #444;
+      color: #fafaf9;
+      padding: 12px 20px;
+      font-size: 16px;
+      letter-spacing: 2px;
+      text-align: center;
+      width: 200px;
+      margin: 20px 0;
+    }
+    .zen-input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+    .final-time {
+      font-size: 32px;
+      color: var(--gold);
+      margin: 20px 0;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
-  <div id="onboarding-overlay"><div class="step-box"><div id="step-msg" class="step-text">Welcome to Mahjong Zen.</div><button class="zen-btn" id="next-step">BEGIN</button><button class="zen-btn" style="border:none;font-size:10px;margin-top:10px" onclick="skipAll()">Skip Tutorial</button></div></div>
-  <header><div class="zen-title">MAHJONG ZEN</div><div style="font-size: 11px; letter-spacing: 4px; margin-top:5px;">REMAINING: <span id="count">0</span></div></header>
+  <div id="onboarding-overlay">
+    <div class="step-box">
+      <div id="step-msg" class="step-text">Welcome to Mahjong Zen.</div>
+      <button class="zen-btn" id="next-step">BEGIN</button>
+      <button class="zen-btn" style="border:none;font-size:10px;margin-top:10px" onclick="skipAll()">Skip Tutorial</button>
+    </div>
+  </div>
+
+  <div id="name-input-overlay">
+    <div class="name-input-box">
+      <div class="step-text" style="color:var(--gold);">ZEN MASTER</div>
+      <div class="step-text">All tiles cleared. Mind at peace.</div>
+      <div class="final-time" id="final-time-display">00:00</div>
+      <div class="step-text" style="font-size:14px;">Enter your name for the leaderboard</div>
+      <input type="text" id="player-name" class="zen-input" placeholder="YOUR NAME" maxlength="20">
+      <br>
+      <button class="zen-btn" onclick="saveScore()" style="border-color:var(--gold);color:var(--gold);">SAVE SCORE</button>
+      <button class="zen-btn" style="border:none;font-size:10px;margin-top:10px" onclick="skipScoreSave()">Skip</button>
+    </div>
+  </div>
+
+  <div id="leaderboard-overlay">
+    <div class="leaderboard-box">
+      <div class="leaderboard-title">LEADERBOARD</div>
+      <div id="leaderboard-list" class="leaderboard-list"></div>
+      <button class="zen-btn" onclick="closeLeaderboard()" style="margin-top:20px;">CLOSE</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="zen-title">MAHJONG ZEN</div>
+    <div class="stats-bar">
+      <div>REMAINING: <span id="count">0</span></div>
+      <div>TIME: <span id="timer">00:00</span></div>
+    </div>
+  </header>
+
   <div id="game-area"><div id="board"></div></div>
-  <footer><button class="zen-btn" onclick="undo()">UNDO</button><button class="zen-btn" onclick="showHint()">HINT</button><button class="zen-btn" onclick="init()">RESET</button></footer>
+
+  <footer>
+    <button class="zen-btn" onclick="undo()">UNDO</button>
+    <button class="zen-btn" onclick="showHint()">HINT</button>
+    <button class="zen-btn" onclick="init()">RESET</button>
+    <button class="zen-btn" onclick="showLeaderboard()" style="border-color:var(--gold);">RANK</button>
+  </footer>
+
   <script>
     const board = document.getElementById('board');
     const countEl = document.getElementById('count');
+    const timerEl = document.getElementById('timer');
     const overlay = document.getElementById('onboarding-overlay');
-    const stepMsg = document.getElementById('step-msg');
+    const nameInputOverlay = document.getElementById('name-input-overlay');
+    const leaderboardOverlay = document.getElementById('leaderboard-overlay');
     const mahjongs = ['🀄','🀅','🀆','🀇','🀈','🀉','🀊','🀋','🀌','🀝','🀞','🀟','🀐','🀑','🀒','🀓','🀔','🀕','🀖','🀗','🀙','🀚','🀛'];
+    
     let selected = null;
     let all = [];
     let history = [];
-    let step = 0;
     let audioCtx = null;
+    let startTime = null;
+    let timerInterval = null;
+    let currentGameTime = 0;
 
     function initAudio() {
       if(!audioCtx) audioCtx = new(window.AudioContext||window.webkitAudioContext)();
@@ -180,6 +303,27 @@
       g.connect(audioCtx.destination);
       o.start();
       o.stop(audioCtx.currentTime + d);
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = (seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function startTimer() {
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        currentGameTime = Math.floor((Date.now() - startTime) / 1000);
+        timerEl.textContent = formatTime(currentGameTime);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if(timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
     }
 
     function isLocked(t) {
@@ -212,12 +356,60 @@
     }
 
     function showSuccessOverlay() {
+      stopTimer();
       playZenSound(800, "triangle", 1.5, 0.05);
-      const div = document.createElement('div');
-      div.id = 'success-overlay';
-      div.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:3000;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;animation: fadeIn 1s;';
-      div.innerHTML = `<div style="border:1px solid var(--gold);padding:50px;background:#1c1917;"><div style="font-size:40px;color:var(--gold);margin-bottom:20px;letter-spacing:10px;">ZEN MASTER</div><div style="font-size:18px;color:#a8a29e;margin-bottom:40px;letter-spacing:2px;">All tiles cleared. Mind at peace.</div><button class="zen-btn" onclick="location.reload()" style="border-color:var(--gold);color:var(--gold);">PLAY AGAIN</button></div>`;
-      document.body.appendChild(div);
+      document.getElementById('final-time-display').textContent = formatTime(currentGameTime);
+      nameInputOverlay.style.display = 'flex';
+      document.getElementById('player-name').value = localStorage.getItem('zenPlayerName') || '';
+      document.getElementById('player-name').focus();
+    }
+
+    function saveScore() {
+      const name = document.getElementById('player-name').value.trim() || 'Anonymous';
+      localStorage.setItem('zenPlayerName', name);
+      
+      const scores = JSON.parse(localStorage.getItem('zenLeaderboard') || '[]');
+      scores.push({
+        name: name,
+        time: currentGameTime,
+        date: new Date().toLocaleDateString(),
+        timestamp: Date.now()
+      });
+      scores.sort((a, b) => a.time - b.time);
+      localStorage.setItem('zenLeaderboard', JSON.stringify(scores.slice(0, 10)));
+      
+      nameInputOverlay.style.display = 'none';
+      showLeaderboard();
+    }
+
+    function skipScoreSave() {
+      nameInputOverlay.style.display = 'none';
+      location.reload();
+    }
+
+    function showLeaderboard() {
+      const scores = JSON.parse(localStorage.getItem('zenLeaderboard') || '[]');
+      const listEl = document.getElementById('leaderboard-list');
+      
+      if(scores.length === 0) {
+        listEl.innerHTML = '<div class="no-scores">No records yet. Be the first!</div>';
+      } else {
+        listEl.innerHTML = scores.map((s, i) => `
+          <div class="leaderboard-item">
+            <span class="rank">#${i + 1}</span>
+            <span class="name">${s.name}</span>
+            <span class="time">${formatTime(s.time)}</span>
+            <span class="date">${s.date}</span>
+          </div>
+        `).join('');
+      }
+      
+      leaderboardOverlay.style.display = 'flex';
+    }
+
+    function closeLeaderboard() {
+      leaderboardOverlay.style.display = 'none';
+      if(all.length === 0) location.reload();
     }
 
     function refresh() {
@@ -262,6 +454,7 @@
     function skipAll() {
       localStorage.setItem('zenDone', '1');
       overlay.style.display = 'none';
+      startTimer();
     }
 
     function showHint() {
@@ -286,9 +479,13 @@
     }
 
     function init() {
+      stopTimer();
       board.innerHTML = '';
       all = [];
       history = [];
+      currentGameTime = 0;
+      timerEl.textContent = '00:00';
+      
       const layout = [];
       for(let r=0;r<6;r++) for(let c=0;c<4;c++) layout.push({r,c,l:0});
       for(let r=1;r<5;r++) for(let c=1;c<3;c++) layout.push({r:r+0.2,c:c+0.2,l:1});
@@ -316,9 +513,22 @@
       });
       if(!hasAvailableMoves()) init();
       refresh();
-      if(!localStorage.getItem('zenDone')) overlay.style.display = 'flex';
+      
+      if(!localStorage.getItem('zenDone')) {
+        overlay.style.display = 'flex';
+      } else {
+        startTimer();
+      }
       document.getElementById('next-step').onclick = () => skipAll();
     }
+
+    // Close overlays on escape key
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape') {
+        nameInputOverlay.style.display = 'none';
+        leaderboardOverlay.style.display = 'none';
+      }
+    });
 
     init();
   </script>
