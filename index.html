@@ -155,6 +155,10 @@
       color: #fafaf9;
       border-color: #a8a29e;
     }
+    .zen-btn.active {
+      color: var(--gold);
+      border-color: var(--gold);
+    }
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -268,6 +272,7 @@
     <button class="zen-btn" onclick="showHint()">HINT</button>
     <button class="zen-btn" onclick="init()">RESET</button>
     <button class="zen-btn" onclick="showLeaderboard()" style="border-color:var(--gold);">RANK</button>
+    <button class="zen-btn" id="noiseBtn" onclick="toggleNoise()">🌧 RAIN</button>
   </footer>
 
   <script>
@@ -520,6 +525,71 @@
         startTimer();
       }
       document.getElementById('next-step').onclick = () => skipAll();
+    }
+
+    // White/Brown Noise Generator
+    let noiseNode = null;
+    let noiseGain = null;
+    let isNoiseOn = false;
+
+    function createBrownNoise() {
+      const bufferSize = 2 * audioCtx.sampleRate;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      let lastOut = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        output[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = output[i];
+        output[i] *= 3.5;
+      }
+      return buffer;
+    }
+
+    function toggleNoise() {
+      initAudio();
+      const btn = document.getElementById('noiseBtn');
+      
+      if (isNoiseOn) {
+        // Turn off
+        if (noiseGain) {
+          noiseGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2);
+          setTimeout(() => {
+            if (noiseNode) { noiseNode.stop(); noiseNode = null; }
+            if (noiseGain) { noiseGain.disconnect(); noiseGain = null; }
+          }, 2000);
+        }
+        btn.textContent = '🌧 RAIN';
+        btn.style.borderColor = '#444';
+        btn.style.color = '#78716c';
+        isNoiseOn = false;
+      } else {
+        // Turn on - create brown noise (softer than white noise)
+        const buffer = createBrownNoise();
+        noiseNode = audioCtx.createBufferSource();
+        noiseNode.buffer = buffer;
+        noiseNode.loop = true;
+        
+        // Lowpass filter to make it more soothing
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 400;
+        
+        noiseGain = audioCtx.createGain();
+        noiseGain.gain.value = 0;
+        
+        noiseNode.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(audioCtx.destination);
+        
+        noiseNode.start();
+        noiseGain.gain.exponentialRampToValueAtTime(0.03, audioCtx.currentTime + 3);
+        
+        btn.textContent = '◼ STOP';
+        btn.style.borderColor = 'var(--gold)';
+        btn.style.color = 'var(--gold)';
+        isNoiseOn = true;
+      }
     }
 
     // Close overlays on escape key
