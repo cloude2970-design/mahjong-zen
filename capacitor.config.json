@@ -1,0 +1,6 @@
+{
+  "appId": "com.cloude2970.mahjongzen",
+  "appName": "Mahjong Zen",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
