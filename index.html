@@ -27,6 +27,11 @@
   <meta name="twitter:description" content="Vita Mahjong 替代选择 - 极简美学麻将配对游戏，内置白噪音，适合冥想与减压。">
   <meta name="twitter:image" content="https://cloude2970-design.github.io/mahjong-zen/icons/icon.svg">
   
+  <!-- TikTok / Douyin -->
+  <meta property="og:site_name" content="Mahjong Zen">
+  <meta property="og:locale" content="zh_CN">
+  <meta name="format-detection" content="telephone=no">
+  
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
   <script>
@@ -310,6 +315,7 @@
     <button class="zen-btn" onclick="init()">RESET</button>
     <button class="zen-btn" onclick="showLeaderboard()" style="border-color:var(--gold);">RANK</button>
     <button class="zen-btn" id="noiseBtn" onclick="toggleNoise()">🌧 RAIN</button>
+    <button class="zen-btn" onclick="shareGame()" style="border-color:#ff0050;color:#ff0050;">📤 分享</button>
   </footer>
 
   <script>
@@ -658,6 +664,55 @@
         leaderboardOverlay.style.display = 'none';
       }
     });
+
+    // 分享功能（支持 TikTok、微信、系统分享）
+    function shareGame() {
+      const shareData = {
+        title: 'Mahjong Zen - 禅意麻将消消乐',
+        text: '发现一款超治愈的麻将配对游戏，白噪音+极简美学，适合减压冥想！',
+        url: 'https://cloude2970-design.github.io/mahjong-zen/'
+      };
+      
+      // 优先使用系统原生分享（TikTok 内浏览器支持）
+      if (navigator.share) {
+        navigator.share(shareData)
+          .then(() => trackEvent('share_success', { 'method': 'native' }))
+          .catch((err) => {
+            if (err.name !== 'AbortError') {
+              console.log('分享失败:', err);
+              fallbackShare();
+            }
+          });
+      } else {
+        fallbackShare();
+      }
+    }
+    
+    // 降级分享方案
+    function fallbackShare() {
+      const shareUrl = 'https://cloude2970-design.github.io/mahjong-zen/';
+      const shareText = '发现一款超治愈的麻将配对游戏，白噪音+极简美学，适合减压冥想！';
+      
+      // 检测是否在 TikTok/抖音内
+      const isTikTok = /tiktok|douyin|aweme/i.test(navigator.userAgent);
+      
+      if (isTikTok) {
+        alert('点击右上角「···」，选择「复制链接」分享给朋友！');
+        trackEvent('share_prompt', { 'method': 'tiktok_manual' });
+      } else {
+        // 复制到剪贴板
+        const fullText = `${shareText} ${shareUrl}`;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(fullText).then(() => {
+            alert('链接已复制，快去分享给朋友吧！');
+            trackEvent('share_success', { 'method': 'clipboard' });
+          });
+        } else {
+          alert(`请手动复制分享：\n${fullText}`);
+          trackEvent('share_prompt', { 'method': 'manual' });
+        }
+      }
+    }
 
     // 注册 Service Worker (PWA)
     if ('serviceWorker' in navigator) {
