@@ -27,6 +27,15 @@
   <meta name="twitter:description" content="Vita Mahjong 替代选择 - 极简美学麻将配对游戏，内置白噪音，适合冥想与减压。">
   <meta name="twitter:image" content="https://cloude2970-design.github.io/mahjong-zen/icons/icon.svg">
   
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+  
   <!-- Canonical URL -->
   <link rel="canonical" href="https://cloude2970-design.github.io/mahjong-zen/">
   <link rel="manifest" href="manifest.json">
@@ -324,6 +333,13 @@
       if(!audioCtx) audioCtx = new(window.AudioContext||window.webkitAudioContext)();
     }
 
+    // Google Analytics 事件追踪
+    function trackEvent(action, params = {}) {
+      if(typeof gtag !== 'undefined') {
+        gtag('event', action, params);
+      }
+    }
+
     function playZenSound(f, type="sine", d=0.5, v=0.02) {
       initAudio();
       const o = audioCtx.createOscillator();
@@ -346,6 +362,7 @@
 
     function startTimer() {
       startTime = Date.now();
+      trackEvent('game_start');
       timerInterval = setInterval(() => {
         currentGameTime = Math.floor((Date.now() - startTime) / 1000);
         timerEl.textContent = formatTime(currentGameTime);
@@ -391,6 +408,10 @@
     function showSuccessOverlay() {
       stopTimer();
       playZenSound(800, "triangle", 1.5, 0.05);
+      trackEvent('game_complete', {
+        'time_seconds': currentGameTime,
+        'time_formatted': formatTime(currentGameTime)
+      });
       document.getElementById('final-time-display').textContent = formatTime(currentGameTime);
       nameInputOverlay.style.display = 'flex';
       document.getElementById('player-name').value = localStorage.getItem('zenPlayerName') || '';
@@ -400,6 +421,11 @@
     function saveScore() {
       const name = document.getElementById('player-name').value.trim() || 'Anonymous';
       localStorage.setItem('zenPlayerName', name);
+      
+      trackEvent('score_save', {
+        'player_name': name,
+        'time_seconds': currentGameTime
+      });
       
       const scores = JSON.parse(localStorage.getItem('zenLeaderboard') || '[]');
       scores.push({
@@ -421,6 +447,7 @@
     }
 
     function showLeaderboard() {
+      trackEvent('leaderboard_view');
       const scores = JSON.parse(localStorage.getItem('zenLeaderboard') || '[]');
       const listEl = document.getElementById('leaderboard-list');
       
@@ -491,6 +518,7 @@
     }
 
     function showHint() {
+      trackEvent('hint_used');
       const free = all.filter(t => !isLocked(t));
       for(let i=0; i<free.length; i++)
         for(let j=i+1; j<free.length; j++)
@@ -503,6 +531,7 @@
 
     function undo() {
       if(!history.length) return;
+      trackEvent('undo_used');
       const last = history.pop();
       last.forEach(t => {
         board.appendChild(t);
@@ -580,6 +609,7 @@
       
       if (isNoiseOn) {
         // Turn off
+        trackEvent('rain_toggle', { 'state': 'off' });
         if (noiseGain) {
           noiseGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2);
           setTimeout(() => {
@@ -593,6 +623,7 @@
         isNoiseOn = false;
       } else {
         // Turn on - create brown noise (softer than white noise)
+        trackEvent('rain_toggle', { 'state': 'on' });
         const buffer = createBrownNoise();
         noiseNode = audioCtx.createBufferSource();
         noiseNode.buffer = buffer;
