@@ -1,0 +1,19 @@
+{
+  "name": "Mahjong Zen",
+  "short_name": "MahjongZen",
+  "description": "禅意麻将消消乐 - 宁静的配对游戏",
+  "start_url": "/mahjong-zen/",
+  "display": "standalone",
+  "background_color": "#0c0a09",
+  "theme_color": "#0c0a09",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "zh-CN"
+}
