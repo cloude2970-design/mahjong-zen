@@ -18,8 +18,11 @@
   },
   "homepage": "https://github.com/cloude2970-design/mahjong-zen#readme",
   "dependencies": {
+    "@capacitor-community/firebase-analytics": "^7.0.1",
     "@capacitor/android": "^8.0.2",
     "@capacitor/cli": "^8.0.2",
-    "@capacitor/core": "^8.0.2"
+    "@capacitor/core": "^8.0.2",
+    "firebase": "^12.8.0",
+    "puppeteer": "^24.37.2"
   }
 }
